@@ -77,9 +77,15 @@ export default function StackedBar() {
             svg.append("g").call(xAxis);
 
             function yAxis(g) {
-                g.attr("transform", `translate(${MARGIN.left}, 0)`)
-                    .call(d3.axisLeft(y).ticks(null, stackedSeries.format))
-                    .attr("font-size", "20px");
+                if(data.length > 1){
+                    g.attr("transform", `translate(${MARGIN.left}, 0)`)
+                        .call(d3.axisLeft(y).ticks(null, stackedSeries.format))
+                        .attr("font-size", "20px");
+                } else {
+                    g.attr("transform", `translate(200, 0)`)
+                        .call(d3.axisLeft(y).ticks(null, stackedSeries.format))
+                        .attr("font-size", "20px");
+                }
             }
             svg.append("g").call(yAxis);
 
