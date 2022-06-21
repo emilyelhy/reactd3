@@ -112,6 +112,9 @@ export default function StackedBar() {
 
     const [currPpl, setCurrPpl] = useState("All");
 
+    var line = d3.line(d => d.date, d => d.value)
+    .curve(d3.curveCatmullRom.alpha(0.5));
+
     return (
         <div style={{display: "flex", flexDirection: "column"}}>
             <h2>StackedBar</h2>
