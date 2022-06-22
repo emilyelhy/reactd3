@@ -13,7 +13,7 @@ const DATA = [
     { name: "John", Ascore: 60, Bscore: 60, Cscore: 80 },
 ];
 
-export default function StackedBar() {
+export default function Crossfiltering() {
     const [data, setData] = useState(DATA);
     const [margin, setMargin] = useState(MARGIN);
 
@@ -117,7 +117,7 @@ export default function StackedBar() {
 
     return (
         <div style={{display: "flex", flexDirection: "column", marginTop: "10%"}}>
-            <h2>StackedBar</h2>
+            <h2>Crossfiltering</h2>
             <DropdownButton id="dropdown-basic-button" title={currPpl} style={{alignSelf: "flex-end"}} onSelect={(ppl) => showPeople(ppl)}>
                 {DATA.map((d) => {
                     return <Dropdown.Item eventKey={d.name} key={d.name} value={d.name}>{d.name}</Dropdown.Item>
