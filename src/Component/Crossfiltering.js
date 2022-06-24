@@ -25,6 +25,7 @@ export default function Crossfiltering() {
         });
     }, []);
 
+    // construct bar chart
     useEffect(() => {
         if (d3BarContainer.current && data) {
             const svg = d3.select(d3BarContainer.current)
@@ -40,11 +41,11 @@ export default function Crossfiltering() {
                 totalZ = totalZ + Number(data[i].Z);
             }
             const average = [];
-            average.push(totalX / (data.length + 1));
-            average.push(totalY / (data.length + 1));
-            average.push(totalZ / (data.length + 1));
+            average.push(totalX / (data.length));
+            average.push(totalY / (data.length));
+            average.push(totalZ / (data.length));
             const entryTitle = ["X", "Y", "Z"];
-            console.log(average)
+            console.log(average);
 
             const x = d3.scaleBand()
                 .domain(d3.range(entryTitle.length))
