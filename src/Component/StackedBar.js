@@ -8,7 +8,7 @@ const height = 400;
 const MARGIN = { top: 50, bottom: 50, left: 50, right: 50 };
 
 const DATA = [
-    { name: "Simon", Ascore: 80, Bscore: 20, Cscore: 60 },
+    { name: "Simon", Ascore: 180, Bscore: 20, Cscore: 60 },
     { name: "Mary", Ascore: 90, Bscore: 20, Cscore: 40 },
     { name: "John", Ascore: 60, Bscore: 60, Cscore: 80 },
 ];
@@ -54,8 +54,6 @@ export default function StackedBar() {
             var stackedSeries = stackedData(data);
             console.log(stackedSeries);
 
-            // const update = d3.select("g").selectAll('rect').data(data);
-
             svg.append("g")
                 .selectAll("g")                                                                              // apply setting to all selected shape
                 .data(stackedSeries)                                                                         // sort the data
@@ -89,8 +87,6 @@ export default function StackedBar() {
             }
             svg.append("g").call(yAxis);
 
-            // svg.node();
-            svg.exit().remove();
             return () => {
                 svg.selectAll("*").remove()
             }
@@ -116,7 +112,7 @@ export default function StackedBar() {
     .curve(d3.curveCatmullRom.alpha(0.5));
 
     return (
-        <div style={{display: "flex", flexDirection: "column", marginTop: "10%"}}>
+        <div style={{display: "flex", flexDirection: "column", marginTop: "10%", marginLeft: "3%", marginRight: "3%"}}>
             <h2>StackedBar</h2>
             <DropdownButton id="dropdown-basic-button" title={currPpl} style={{alignSelf: "flex-end"}} onSelect={(ppl) => showPeople(ppl)}>
                 {DATA.map((d) => {
@@ -125,7 +121,7 @@ export default function StackedBar() {
                 <Dropdown.Divider />
                 <Dropdown.Item eventKey="All" value="All">All</Dropdown.Item>
             </DropdownButton>
-            <svg height={height} width={width} ref={d3Container}>
+            <svg height={height} width={width} ref={d3Container} style={{alignSelf: "center"}}>
             </svg>
         </div>
     )
