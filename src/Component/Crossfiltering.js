@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import * as d3 from 'd3'
 import { Table, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.css';
+import { svg } from 'd3';
 
 const PATH = "/data/Accelerometer/Accelerometer-test.csv";
 const BAR_HEIGHT = 410;
@@ -14,6 +15,7 @@ const COLOR = ["#ff7577", "#55ff7f", "#55ffff"]
 export default function Crossfiltering() {
     const [data, setData] = useState([]);
     const d3BarContainer = useRef(null);
+    const d3LineContainer = useRef(null);
 
     // import csv as csvData
     useEffect(() => {
@@ -84,7 +86,55 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [data])
+    }, [data]);
+
+    // construct line chart
+    useEffect(() => {
+        if (d3LineContainer.current && data) {
+            const svg = d3.select(d3LineContainer.current)
+                .attr("height", LINE_HEIGHT - MARGIN.top - MARGIN.bottom)
+                .attr("width", LINE_WIDTH - MARGIN.left - MARGIN.right)
+                .attr("viewBox", [0 - MARGIN.left, 0, LINE_WIDTH, LINE_HEIGHT]);
+
+            const x = d3.scaleTime()
+                .domain(d3.extent(data, (d) => { return d.timestamp }))
+                .range([MARGIN.left, LINE_WIDTH - MARGIN.right]);
+
+            const y = d3.scaleLinear()
+                .domain([-1, d3.max(data, (d) => {return d.X})])
+                .range([LINE_HEIGHT - MARGIN.bottom, MARGIN.top]);
+
+            const valueLine = d3.line()
+                .x((d) => { return x(d.timestamp); })
+                .y((d) => { return y(d.X); });
+
+            svg.append("path")
+                .data([data])
+                .attr("class", "line")
+                .attr("fill", "none")
+                .attr("stroke", COLOR[0])
+                .attr("stroke-width", 1.5)
+                .attr("d", valueLine);
+
+            function xAxis(g) {
+                g.attr("transform", `translate(0, ${LINE_HEIGHT - MARGIN.bottom})`)
+                    .call(d3.axisBottom(x))
+                    .attr("font-size", "20px");
+            }
+            svg.append("g").call(xAxis);
+
+            function yAxis(g) {
+                g.attr("transform", `translate(${MARGIN.left}, 0)`)
+                    .call(d3.axisLeft(y))
+                    .attr("font-size", "20px");
+            }
+            svg.append("g").call(yAxis);
+
+            return () => {
+                svg.selectAll("*").remove()
+            }
+        }
+    }, [data]);
 
     const timestampConverter = (timestamp) => {
         var date = new Date(Number(timestamp));
@@ -104,7 +154,7 @@ export default function Crossfiltering() {
                     </svg>
                 }
                 {data.length > 0 &&
-                    <svg height={LINE_HEIGHT} width={LINE_WIDTH} style={{ backgroundColor: "#00ff00" }}>
+                    <svg height={LINE_HEIGHT} width={LINE_WIDTH} ref={d3LineContainer} style={{ backgroundColor: "#00ff00" }}>
                     </svg>
                 }
             </div>
