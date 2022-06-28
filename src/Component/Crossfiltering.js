@@ -1,21 +1,25 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as d3 from 'd3'
-import { Table, Button } from 'react-bootstrap';
+import { Table, Button, Dropdown, DropdownButton } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.css';
-import { svg } from 'd3';
+
 
 const PATH = "/data/Accelerometer/Accelerometer-test.csv";
-const BAR_HEIGHT = 410;
+const BAR_HEIGHT = 450;
 const BAR_WIDTH = 510;
-const LINE_HEIGHT = 410;
+const LINE_HEIGHT = 450;
 const LINE_WIDTH = 760;
 const MARGIN = { top: 30, bottom: 30, left: 30, right: 30 };
-const COLOR = ["#ff7577", "#55ff7f", "#55ffff"]
+const COLOR = ["#ff7577", "#55ff7f", "#55ffff"];
+const HEADER = ["X", "Y", "Z"];
 
 export default function Crossfiltering() {
     const [data, setData] = useState([]);
+    const [currSelection, setCurrSelection] = useState("All");
+    const [showData, setShowData] = useState([]);
     const d3BarContainer = useRef(null);
     const d3LineContainer = useRef(null);
+    const [header, setHeader] = useState(HEADER);
 
     // import csv as csvData
     useEffect(() => {
@@ -101,20 +105,25 @@ export default function Crossfiltering() {
                 .range([MARGIN.left, LINE_WIDTH - MARGIN.right]);
 
             const y = d3.scaleLinear()
-                .domain([-1, d3.max(data, (d) => {return d.X})])
+                .domain([Math.floor(d3.min([d3.min(data, (d) => { return Number(d.X) }), d3.min(data, (d) => { return Number(d.Y) }), d3.min(data, (d) => { return Number(d.Z) })]) * 10) / 10, Math.ceil(d3.max([d3.max(data, (d) => { return Number(d.X) }), d3.max(data, (d) => { return Number(d.Y) }), d3.max(data, (d) => { return Number(d.Z) })]) * 10) / 10])
                 .range([LINE_HEIGHT - MARGIN.bottom, MARGIN.top]);
 
-            const valueLine = d3.line()
-                .x((d) => { return x(d.timestamp); })
-                .y((d) => { return y(d.X); });
+            const valueLine = [];
+            for (let i = 0; i < HEADER.length; i++) {
+                valueLine.push(d3.line()
+                    .x((d) => { return x(d.timestamp); })
+                    .y((d) => { return y(d[HEADER[i]]); }));
+            }
 
-            svg.append("path")
-                .data([data])
-                .attr("class", "line")
-                .attr("fill", "none")
-                .attr("stroke", COLOR[0])
-                .attr("stroke-width", 1.5)
-                .attr("d", valueLine);
+            for (let i = 0; i < HEADER.length; i++) {
+                svg.append("path")
+                    .data([data])
+                    .attr("class", "line")
+                    .attr("fill", "none")
+                    .attr("stroke", COLOR[i])
+                    .attr("stroke-width", 1.5)
+                    .attr("d", valueLine[i]);
+            }
 
             function xAxis(g) {
                 g.attr("transform", `translate(0, ${LINE_HEIGHT - MARGIN.bottom})`)
@@ -139,22 +148,47 @@ export default function Crossfiltering() {
     const timestampConverter = (timestamp) => {
         var date = new Date(Number(timestamp));
         return date.getFullYear() + "-" + String((date.getMonth() + 1)).padStart(2, '0') + "-" + String(date.getDate()).padStart(2, '0') + " " + String(date.getHours()).padStart(2, '0') + ":" + String(date.getMinutes()).padStart(2, '0');
-    }
+    };
 
     const print = () => {
         console.log(data.columns);
-    }
+    };
+
+    const handleCurrSelection = (sel) => {
+        setCurrSelection(sel);
+        if(sel === "All"){
+            setShowData(data);
+            setHeader(HEADER);
+        }
+        else {
+            var temp = [];
+            for(let i = 0; i < data.length; i++)
+                temp.push({ sel: data[i][sel], timestamp: data[i]["timestamp"], timeString: data[i]["timeString"]});
+            setHeader(sel);
+            setShowData(temp);
+        }
+
+        // if(ppl === "All") setMargin(MARGIN);
+        // else setMargin({top: 50, bottom: 50, left: 200, right: 200});
+    };
 
     return (
         <div style={{ marginTop: "8%", marginBottom: "3%", marginRight: "1%", marginLeft: "1%" }}>
             <h2>Crossfiltering Page</h2>
+            {data.length > 0 && <DropdownButton id="dropdown-basic-button" title={currSelection} style={{ alignSelf: "flex-end" }} onSelect={(sel) => handleCurrSelection(sel)}>
+                {HEADER.map((h) => {
+                    return <Dropdown.Item eventKey={h} key={h} value={h}>{h}</Dropdown.Item>
+                })}
+                <Dropdown.Divider />
+                <Dropdown.Item eventKey="All" value="All">All</Dropdown.Item>
+            </DropdownButton>}
             <div style={{ display: "flex", justifyContent: "space-evenly", marginBottom: "5%" }}>
                 {data.length > 0 &&
                     <svg height={BAR_HEIGHT} width={BAR_WIDTH} ref={d3BarContainer}>
                     </svg>
                 }
                 {data.length > 0 &&
-                    <svg height={LINE_HEIGHT} width={LINE_WIDTH} ref={d3LineContainer} style={{ backgroundColor: "#00ff00" }}>
+                    <svg height={LINE_HEIGHT} width={LINE_WIDTH} ref={d3LineContainer}>
                     </svg>
                 }
             </div>
