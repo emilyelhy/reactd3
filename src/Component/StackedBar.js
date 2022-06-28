@@ -8,7 +8,7 @@ const height = 400;
 const MARGIN = { top: 50, bottom: 50, left: 50, right: 50 };
 
 const DATA = [
-    { name: "Simon", Ascore: 180, Bscore: 20, Cscore: 60 },
+    { name: "Simon", Ascore: 80, Bscore: 20, Cscore: 60 },
     { name: "Mary", Ascore: 90, Bscore: 20, Cscore: 40 },
     { name: "John", Ascore: 60, Bscore: 60, Cscore: 80 },
 ];
