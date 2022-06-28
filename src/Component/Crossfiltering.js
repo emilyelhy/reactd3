@@ -3,7 +3,6 @@ import * as d3 from 'd3'
 import { Table, Button, Dropdown, DropdownButton } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.css';
 
-
 const PATH = "/data/Accelerometer/Accelerometer-test.csv";
 const BAR_HEIGHT = 450;
 const BAR_WIDTH = 510;
@@ -25,10 +24,10 @@ export default function Crossfiltering() {
 
     // import csv as csvData
     useEffect(() => {
-        d3.csv(PATH, function (csvRow) {
+        d3.csv(PATH, (csvRow) => {
             csvRow.timeString = timestampConverter(csvRow.timestamp);
             return csvRow;
-        }).then(function (d) {
+        }).then((d) => {
             setData(d);
             setShowData(d);
             setMin(Math.floor(d3.min([d3.min(d, (val) => { return Number(val.X) }), d3.min(d, (val) => { return Number(val.Y) }), d3.min(d, (val) => { return Number(val.Z) })]) * 10) / 10);
@@ -55,12 +54,11 @@ export default function Crossfiltering() {
             average.push(totalX / (data.length));
             average.push(totalY / (data.length));
             average.push(totalZ / (data.length));
-            const entryTitle = ["X", "Y", "Z"];
 
             const x = d3.scaleBand()
                 .domain(d3.range(header.length))
                 .range([MARGIN.left, BAR_WIDTH - MARGIN.right])
-                .padding(0.6 / header.length);
+                .padding(0.45 / header.length);
 
             const y = d3.scaleLinear()
                 .domain([min, max])
@@ -75,7 +73,7 @@ export default function Crossfiltering() {
                     .attr("y", (d) => y(d) - MARGIN.bottom)
                     .attr("height", d => BAR_HEIGHT - y(d))
                     .attr("width", x.bandwidth())
-                    .attr("fill", (_, i) => COLOR[entryTitle[i]]);
+                    .attr("fill", (_, i) => COLOR[header[i]]);
             } else {
                 let newAverage;
                 if (currSelection === "X") newAverage = average[0];
@@ -108,7 +106,7 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [showData]);
+    }, [showData, currSelection, data, header, max, min]);
 
     // construct line chart
     useEffect(() => {
@@ -161,7 +159,7 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [showData]);
+    }, [showData, header, max, min]);
 
     const timestampConverter = (timestamp) => {
         var date = new Date(Number(timestamp));
