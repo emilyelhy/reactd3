@@ -10,7 +10,7 @@ const BAR_WIDTH = 510;
 const LINE_HEIGHT = 450;
 const LINE_WIDTH = 760;
 const MARGIN = { top: 30, bottom: 30, left: 30, right: 30 };
-const COLOR = ["#ff7577", "#55ff7f", "#55ffff"];
+const COLOR = {X: "#ff7577", Y: "#55ff7f", Z: "#55ffff"};
 const HEADER = ["X", "Y", "Z"];
 
 export default function Crossfiltering() {
@@ -20,6 +20,8 @@ export default function Crossfiltering() {
     const d3BarContainer = useRef(null);
     const d3LineContainer = useRef(null);
     const [header, setHeader] = useState(HEADER);
+    const [min, setMin] = useState(-1.0);
+    const [max, setMax] = useState(1.0);
 
     // import csv as csvData
     useEffect(() => {
@@ -28,99 +30,102 @@ export default function Crossfiltering() {
             return csvRow;
         }).then(function (d) {
             setData(d);
+            setShowData(d);
+            setMin(Math.floor(d3.min([d3.min(d, (val) => { return Number(val.X) }), d3.min(d, (val) => { return Number(val.Y) }), d3.min(d, (val) => { return Number(val.Z) })]) * 10) / 10);
+            setMax(Math.ceil(d3.max([d3.max(d, (val) => { return Number(val.X) }), d3.max(d, (val) => { return Number(val.Y) }), d3.max(d, (val) => { return Number(val.Z) })]) * 10) / 10);
         });
     }, []);
 
     // construct bar chart
-    useEffect(() => {
-        if (d3BarContainer.current && data) {
-            const svg = d3.select(d3BarContainer.current)
-                .attr("height", BAR_HEIGHT - MARGIN.top - MARGIN.bottom)
-                .attr("width", BAR_WIDTH - MARGIN.left - MARGIN.right)
-                .attr("viewBox", [0 - MARGIN.left, 0, BAR_WIDTH, BAR_HEIGHT]);
+    // useEffect(() => {
+    //     if (d3BarContainer.current && data) {
+    //         const svg = d3.select(d3BarContainer.current)
+    //             .attr("height", BAR_HEIGHT - MARGIN.top - MARGIN.bottom)
+    //             .attr("width", BAR_WIDTH - MARGIN.left - MARGIN.right)
+    //             .attr("viewBox", [0 - MARGIN.left, 0, BAR_WIDTH, BAR_HEIGHT]);
 
-            // calculating average of X, Y, Z
-            var totalX = 0, totalY = 0, totalZ = 0;
-            for (let i = 0; i < data.length; i++) {
-                totalX = totalX + Number(data[i].X);
-                totalY = totalY + Number(data[i].Y);
-                totalZ = totalZ + Number(data[i].Z);
-            }
-            const average = [];
-            average.push(totalX / (data.length));
-            average.push(totalY / (data.length));
-            average.push(totalZ / (data.length));
-            const entryTitle = ["X", "Y", "Z"];
-            console.log(average);
+    //         // calculating average of X, Y, Z
+    //         var totalX = 0, totalY = 0, totalZ = 0;
+    //         for (let i = 0; i < data.length; i++) {
+    //             totalX = totalX + Number(data[i].X);
+    //             totalY = totalY + Number(data[i].Y);
+    //             totalZ = totalZ + Number(data[i].Z);
+    //         }
+    //         const average = [];
+    //         average.push(totalX / (data.length));
+    //         average.push(totalY / (data.length));
+    //         average.push(totalZ / (data.length));
+    //         const entryTitle = ["X", "Y", "Z"];
+    //         console.log(average);
 
-            const x = d3.scaleBand()
-                .domain(d3.range(entryTitle.length))
-                .range([MARGIN.left, BAR_WIDTH - MARGIN.right])
-                .padding(0.2);
+    //         const x = d3.scaleBand()
+    //             .domain(d3.range(entryTitle.length))
+    //             .range([MARGIN.left, BAR_WIDTH - MARGIN.right])
+    //             .padding(0.2);
 
-            const y = d3.scaleLinear()
-                .domain([-1.0, 1.0])
-                .range([BAR_HEIGHT - MARGIN.bottom, MARGIN.top]);
+    //         const y = d3.scaleLinear()
+    //             .domain([-1.0, 1.0])
+    //             .range([BAR_HEIGHT - MARGIN.bottom, MARGIN.top]);
 
-            svg.selectAll("rect")
-                .data(average)
-                .enter()
-                .append("rect")
-                .attr("x", (_, i) => x(i))
-                .attr("y", (d) => y(d) - MARGIN.bottom)
-                .attr("height", d => BAR_HEIGHT - y(d))
-                .attr("width", x.bandwidth())
-                .attr("fill", (_, i) => COLOR[i]);
+    //         svg.selectAll("rect")
+    //             .data(average)
+    //             .enter()
+    //             .append("rect")
+    //             .attr("x", (_, i) => x(i))
+    //             .attr("y", (d) => y(d) - MARGIN.bottom)
+    //             .attr("height", d => BAR_HEIGHT - y(d))
+    //             .attr("width", x.bandwidth())
+    //             .attr("fill", (_, i) => COLOR[i]);
 
-            function xAxis(g) {
-                g.attr("transform", `translate(0, ${BAR_HEIGHT - MARGIN.bottom})`)
-                    .call(d3.axisBottom(x).tickFormat(i => entryTitle[i]))
-                    .attr("font-size", "20px");
-            }
-            svg.append("g").call(xAxis);
+    //         function xAxis(g) {
+    //             g.attr("transform", `translate(0, ${BAR_HEIGHT - MARGIN.bottom})`)
+    //                 .call(d3.axisBottom(x).tickFormat(i => entryTitle[i]))
+    //                 .attr("font-size", "20px");
+    //         }
+    //         svg.append("g").call(xAxis);
 
-            function yAxis(g) {
-                g.attr("transform", `translate(${MARGIN.left}, 0)`)
-                    .call(d3.axisLeft(y).ticks(null, average.format))
-                    .attr("font-size", "20px");
-            }
-            svg.append("g").call(yAxis);
+    //         function yAxis(g) {
+    //             g.attr("transform", `translate(${MARGIN.left}, 0)`)
+    //                 .call(d3.axisLeft(y).ticks(null, average.format))
+    //                 .attr("font-size", "20px");
+    //         }
+    //         svg.append("g").call(yAxis);
 
-            return () => {
-                svg.selectAll("*").remove()
-            }
-        }
-    }, [data]);
+    //         return () => {
+    //             svg.selectAll("*").remove()
+    //         }
+    //     }
+    // }, [data]);
 
     // construct line chart
     useEffect(() => {
-        if (d3LineContainer.current && data) {
+        if (d3LineContainer.current && showData) {
             const svg = d3.select(d3LineContainer.current)
                 .attr("height", LINE_HEIGHT - MARGIN.top - MARGIN.bottom)
                 .attr("width", LINE_WIDTH - MARGIN.left - MARGIN.right)
                 .attr("viewBox", [0 - MARGIN.left, 0, LINE_WIDTH, LINE_HEIGHT]);
 
             const x = d3.scaleTime()
-                .domain(d3.extent(data, (d) => { return d.timestamp }))
+                .domain(d3.extent(showData, (d) => { return d.timestamp }))
                 .range([MARGIN.left, LINE_WIDTH - MARGIN.right]);
 
             const y = d3.scaleLinear()
-                .domain([Math.floor(d3.min([d3.min(data, (d) => { return Number(d.X) }), d3.min(data, (d) => { return Number(d.Y) }), d3.min(data, (d) => { return Number(d.Z) })]) * 10) / 10, Math.ceil(d3.max([d3.max(data, (d) => { return Number(d.X) }), d3.max(data, (d) => { return Number(d.Y) }), d3.max(data, (d) => { return Number(d.Z) })]) * 10) / 10])
-                .range([LINE_HEIGHT - MARGIN.bottom, MARGIN.top]);
+                    .domain([min, max])
+                    .range([LINE_HEIGHT - MARGIN.bottom, MARGIN.top]);
 
             const valueLine = [];
-            for (let i = 0; i < HEADER.length; i++) {
+            for (let i = 0; i < header.length; i++) {
                 valueLine.push(d3.line()
                     .x((d) => { return x(d.timestamp); })
-                    .y((d) => { return y(d[HEADER[i]]); }));
+                    .y((d) => { return y(d[header[i]]); }));
             }
 
-            for (let i = 0; i < HEADER.length; i++) {
+            for (let i = 0; i < valueLine.length; i++) {
                 svg.append("path")
-                    .data([data])
+                    .data([showData])
                     .attr("class", "line")
                     .attr("fill", "none")
-                    .attr("stroke", COLOR[i])
+                    .attr("stroke", COLOR[header[i]])
                     .attr("stroke-width", 1.5)
                     .attr("d", valueLine[i]);
             }
@@ -143,7 +148,7 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [data]);
+    }, [showData]);
 
     const timestampConverter = (timestamp) => {
         var date = new Date(Number(timestamp));
@@ -156,14 +161,14 @@ export default function Crossfiltering() {
 
     const handleCurrSelection = (sel) => {
         setCurrSelection(sel);
-        if(sel === "All"){
+        if (sel === "All") {
             setShowData(data);
             setHeader(HEADER);
         }
         else {
             var temp = [];
-            for(let i = 0; i < data.length; i++)
-                temp.push({ sel: data[i][sel], timestamp: data[i]["timestamp"], timeString: data[i]["timeString"]});
+            for (let i = 0; i < data.length; i++)
+                temp.push({ [sel]: data[i][sel], timestamp: data[i]["timestamp"], timeString: data[i]["timeString"] });
             setHeader(sel);
             setShowData(temp);
         }
