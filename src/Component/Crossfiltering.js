@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as d3 from 'd3'
 import { Table, Button, Dropdown, DropdownButton } from 'react-bootstrap';
+import { Slider } from '@mui/material';
 import 'bootstrap/dist/css/bootstrap.css';
 
-const PATH = "/data/Accelerometer/Accelerometer-test.csv";
+const PATH = "/data/Accelerometer/Accelerometer-5572736000.csv";
 const BAR_HEIGHT = 450;
 const BAR_WIDTH = 510;
 const LINE_HEIGHT = 450;
@@ -21,23 +22,29 @@ export default function Crossfiltering() {
     const [header, setHeader] = useState(HEADER);
     const [min, setMin] = useState(-1.0);
     const [max, setMax] = useState(1.0);
+    const [range, setRange] = useState([0.3, 0.5]);
 
     // import csv as csvData
     useEffect(() => {
         d3.csv(PATH, (csvRow) => {
+            csvRow.X = Number(csvRow.X);
+            csvRow.Y = Number(csvRow.Y);
+            csvRow.Z = Number(csvRow.Z);
+            csvRow.timestamp = Number(csvRow.timestamp);
             csvRow.timeString = timestampConverter(csvRow.timestamp);
             return csvRow;
         }).then((d) => {
             setData(d);
             setShowData(d);
-            setMin(Math.floor(d3.min([d3.min(d, (val) => { return Number(val.X) }), d3.min(d, (val) => { return Number(val.Y) }), d3.min(d, (val) => { return Number(val.Z) })]) * 10) / 10);
-            setMax(Math.ceil(d3.max([d3.max(d, (val) => { return Number(val.X) }), d3.max(d, (val) => { return Number(val.Y) }), d3.max(d, (val) => { return Number(val.Z) })]) * 10) / 10);
+            setMin(Math.floor(d3.min([d3.min(d, (val) => { return val.X }), d3.min(d, (val) => { return val.Y }), d3.min(d, (val) => { return val.Z })]) * 10) / 10);
+            setMax(Math.ceil(d3.max([d3.max(d, (val) => { return val.X }), d3.max(d, (val) => { return val.Y }), d3.max(d, (val) => { return val.Z })]) * 10) / 10);
+            setRange([d[0].timestamp, d[d.length - 1].timestamp]);
         });
     }, []);
 
     // construct bar chart
     useEffect(() => {
-        if (d3BarContainer.current && data) {
+        if (d3BarContainer.current && showData) {
             const svg = d3.select(d3BarContainer.current)
                 .attr("height", BAR_HEIGHT - MARGIN.top - MARGIN.bottom)
                 .attr("width", BAR_WIDTH - MARGIN.left - MARGIN.right)
@@ -46,14 +53,14 @@ export default function Crossfiltering() {
             // calculating average of X, Y, Z
             var totalX = 0, totalY = 0, totalZ = 0;
             for (let i = 0; i < showData.length; i++) {
-                totalX = totalX + Number(data[i].X);
-                totalY = totalY + Number(data[i].Y);
-                totalZ = totalZ + Number(data[i].Z);
+                totalX = totalX + showData[i].X;
+                totalY = totalY + showData[i].Y;
+                totalZ = totalZ + showData[i].Z;
             }
             const average = [];
-            average.push(totalX / (data.length));
-            average.push(totalY / (data.length));
-            average.push(totalZ / (data.length));
+            average.push(totalX / (showData.length));
+            average.push(totalY / (showData.length));
+            average.push(totalZ / (showData.length));
 
             const x = d3.scaleBand()
                 .domain(d3.range(header.length))
@@ -106,7 +113,7 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [showData, currSelection, data, header, max, min]);
+    }, [showData, currSelection, header, max, min]);
 
     // construct line chart
     useEffect(() => {
@@ -159,10 +166,10 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [showData, header, max, min]);
+    }, [showData, header, max, min, range]);
 
     const timestampConverter = (timestamp) => {
-        var date = new Date(Number(timestamp));
+        var date = new Date(timestamp);
         return date.getFullYear() + "-" + String((date.getMonth() + 1)).padStart(2, '0') + "-" + String(date.getDate()).padStart(2, '0') + " " + String(date.getHours()).padStart(2, '0') + ":" + String(date.getMinutes()).padStart(2, '0');
     };
 
@@ -185,10 +192,28 @@ export default function Crossfiltering() {
         }
     };
 
+    const handleSliderRange = (_, newValue) => {
+        var tempDataArray = [];
+        for(let i = 0; i < data.length; i++){
+            if(data[i].timestamp >= newValue[0] && data[i].timestamp <= newValue[1])
+                tempDataArray.push(data[i]);
+        }
+        setShowData(tempDataArray);
+    }
+
     return (
         <div style={{ marginTop: "8%", marginBottom: "3%", marginRight: "1%", marginLeft: "1%" }}>
             <h2>Crossfiltering Page</h2>
-            {data.length > 0 && <div>
+            {data.length > 0 && <div style={{ display: "flex", flexDirection: "row", alignContent: "space-around" }}>
+                <Slider
+                    min={data[0].timestamp}
+                    max={data[data.length - 1].timestamp}
+                    value={range}
+                    onChangeCommitted={handleSliderRange}
+                    onChange={(_, newValue) => setRange(newValue)}
+                    valueLabelDisplay="auto"
+                    style={{ marginLeft: "5%", marginRight: "30%" }}
+                />
                 <DropdownButton id="dropdown-basic-button" title={currSelection} style={{ alignSelf: "flex-end" }} onSelect={(sel) => handleCurrSelection(sel)}>
                     {HEADER.map((h) => {
                         return <Dropdown.Item eventKey={h} key={h} value={h}>{h}</Dropdown.Item>
@@ -210,7 +235,7 @@ export default function Crossfiltering() {
             <Button style={{ marginBottom: "3%" }} onClick={print}>
                 For Test
             </Button>
-            {data.length > 0 &&
+            {/* {data.length > 0 &&
                 <Table bordered striped hover className="table-light">
                     <thead>
                         <tr key={"header"}>
@@ -230,7 +255,7 @@ export default function Crossfiltering() {
                         ))}
                     </tbody>
                 </Table>
-            }
+            } */}
         </div >
     )
 }
