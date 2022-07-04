@@ -4,7 +4,7 @@ import { Table, Button, Dropdown, DropdownButton } from 'react-bootstrap';
 import { Slider } from '@mui/material';
 import 'bootstrap/dist/css/bootstrap.css';
 
-const PATH = "/data/Accelerometer/Accelerometer-5572736000.csv";
+const PATH = "/data/Accelerometer/Accelerometer-test.csv";
 const BAR_HEIGHT = 450;
 const BAR_WIDTH = 510;
 const LINE_HEIGHT = 450;
@@ -180,26 +180,31 @@ export default function Crossfiltering() {
     const handleCurrSelection = (sel) => {
         setCurrSelection(sel);
         if (sel === "All") {
-            setShowData(data);
+            setShowData(snipData(range));
             setHeader(HEADER);
         }
         else {
+            var snipped = snipData(range);
             var temp = [];
-            for (let i = 0; i < data.length; i++)
-                temp.push({ [sel]: data[i][sel], timestamp: data[i]["timestamp"], timeString: data[i]["timeString"] });
+            for (let i = 0; i < snipped.length; i++)
+                temp.push({ [sel]: snipped[i][sel], timestamp: snipped[i]["timestamp"], timeString: snipped[i]["timeString"] });
             setHeader(sel);
             setShowData(temp);
         }
     };
 
-    const handleSliderRange = (_, newValue) => {
+    const snipData = (newValue) => {
         var tempDataArray = [];
         for(let i = 0; i < data.length; i++){
             if(data[i].timestamp >= newValue[0] && data[i].timestamp <= newValue[1])
                 tempDataArray.push(data[i]);
         }
-        setShowData(tempDataArray);
-    }
+        return tempDataArray;
+    };
+
+    const handleSliderRange = (_, newValue) => {
+        setShowData(snipData(newValue));
+    };
 
     return (
         <div style={{ marginTop: "8%", marginBottom: "3%", marginRight: "1%", marginLeft: "1%" }}>
@@ -212,6 +217,7 @@ export default function Crossfiltering() {
                     onChangeCommitted={handleSliderRange}
                     onChange={(_, newValue) => setRange(newValue)}
                     valueLabelDisplay="auto"
+                    valueLabelFormat={value => <div>{timestampConverter(value)}</div>}
                     style={{ marginLeft: "5%", marginRight: "30%" }}
                 />
                 <DropdownButton id="dropdown-basic-button" title={currSelection} style={{ alignSelf: "flex-end" }} onSelect={(sel) => handleCurrSelection(sel)}>
