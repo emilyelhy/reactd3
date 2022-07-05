@@ -10,8 +10,6 @@ const BAR_WIDTH = 510;
 const LINE_HEIGHT = 450;
 const LINE_WIDTH = 760;
 const MARGIN = { top: 30, bottom: 30, left: 30, right: 30 };
-const COLOR = { X: "#ff7577", Y: "#55ff7f", Z: "#55ffff" };
-const HEADER = ["X", "Y", "Z"];
 
 export default function Crossfiltering() {
     const [data, setData] = useState([]);
@@ -19,10 +17,13 @@ export default function Crossfiltering() {
     const [showData, setShowData] = useState([]);
     const d3BarContainer = useRef(null);
     const d3LineContainer = useRef(null);
+    const HEADER = ["X", "Y", "Z"];
     const [header, setHeader] = useState(HEADER);
     const [min, setMin] = useState(-1.0);
     const [max, setMax] = useState(1.0);
-    const [range, setRange] = useState([0.3, 0.5]);
+    const [range, setRange] = useState([]);
+    const COLOR = { X: "#ff7577", Y: "#55ff7f", Z: "#55ffff" };
+    const [color, setColor] = useState(COLOR);
 
     // import csv as csvData
     useEffect(() => {
@@ -61,6 +62,7 @@ export default function Crossfiltering() {
             average.push(totalX / (showData.length));
             average.push(totalY / (showData.length));
             average.push(totalZ / (showData.length));
+            console.log(average)
 
             const x = d3.scaleBand()
                 .domain(d3.range(header.length))
@@ -77,10 +79,24 @@ export default function Crossfiltering() {
                     .enter()
                     .append("rect")
                     .attr("x", (_, i) => x(i))
-                    .attr("y", (d) => y(d) - MARGIN.bottom)
-                    .attr("height", d => BAR_HEIGHT - y(d))
+                    .attr("y", (d) => y(d))
+                    .attr("height", d => BAR_HEIGHT - MARGIN.bottom - y(d))
                     .attr("width", x.bandwidth())
-                    .attr("fill", (_, i) => COLOR[header[i]]);
+                    .attr("fill", (_, i) => color[header[i]])
+                    .attr("id", (_, i) => header[i])
+                    .on("mouseover", function () {
+                        console.log(color);
+                        for (let i = 0; i < Object.keys(color).length; i++) {
+                            if (Object.keys(color)[i] !== this.id) {
+                                color[Object.keys(color)[i]] = "#000000";
+                            }
+                        }
+                        setColor(color);
+                        console.log(color);
+                    })
+                    .on("mouseout", function () {
+                        setColor(COLOR);
+                    });
             } else {
                 let newAverage;
                 if (currSelection === "X") newAverage = average[0];
@@ -92,7 +108,20 @@ export default function Crossfiltering() {
                     .attr("y", (d) => y(d) - MARGIN.bottom)
                     .attr("height", d => BAR_HEIGHT - y(d))
                     .attr("width", x.bandwidth())
-                    .attr("fill", (_, i) => COLOR[currSelection]);
+                    .attr("fill", (_, i) => COLOR[currSelection])
+                    .attr("id", (_, i) => header[i])
+                    .on("mouseover", function () {
+                        return d3.select(this)
+                            .transition()
+                            .duration("50")
+                            .attr("opacity", "0.6");
+                    })
+                    .on("mouseout", function () {
+                        return d3.select(this)
+                            .transition()
+                            .duration("50")
+                            .attr("opacity", "1");
+                    });
             }
 
             function xAxis(g) {
@@ -113,7 +142,7 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [showData, currSelection, header, max, min]);
+    }, [showData, currSelection, header, max, min, color]);
 
     // construct line chart
     useEffect(() => {
@@ -143,9 +172,22 @@ export default function Crossfiltering() {
                     .data([showData])
                     .attr("class", "line")
                     .attr("fill", "none")
-                    .attr("stroke", COLOR[header[i]])
+                    .attr("stroke", color[header[i]])
                     .attr("stroke-width", 1.5)
-                    .attr("d", valueLine[i]);
+                    .attr("d", valueLine[i])
+                    .attr("id", header[i])
+                    .on("mouseover", function () {
+                        for (let i = 0; i < Object.keys(color).length; i++) {
+                            if (Object.keys(color)[i] !== this.id)
+                                color[Object.keys(color)[i]] = "#000000";
+                        }
+                        console.log(color);
+                        setColor(color);
+                    })
+                    .on("mouseout", function () {
+                        console.log(COLOR);
+                        setColor(COLOR);
+                    });
             }
 
             function xAxis(g) {
@@ -166,7 +208,7 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [showData, header, max, min, range]);
+    }, [showData, header, max, min, range, color]);
 
     const timestampConverter = (timestamp) => {
         var date = new Date(timestamp);
@@ -174,7 +216,7 @@ export default function Crossfiltering() {
     };
 
     const print = () => {
-        console.log(data.columns);
+        console.log(color);
     };
 
     const handleCurrSelection = (sel) => {
@@ -195,8 +237,8 @@ export default function Crossfiltering() {
 
     const snipData = (newValue) => {
         var tempDataArray = [];
-        for(let i = 0; i < data.length; i++){
-            if(data[i].timestamp >= newValue[0] && data[i].timestamp <= newValue[1])
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].timestamp >= newValue[0] && data[i].timestamp <= newValue[1])
                 tempDataArray.push(data[i]);
         }
         return tempDataArray;
