@@ -10,6 +10,7 @@ const BAR_WIDTH = 510;
 const LINE_HEIGHT = 450;
 const LINE_WIDTH = 760;
 const MARGIN = { top: 30, bottom: 30, left: 30, right: 30 };
+const COLOR = { X: "#ff7577", Y: "#55ff7f", Z: "#55ffff" };
 
 export default function Crossfiltering() {
     const [data, setData] = useState([]);
@@ -22,7 +23,6 @@ export default function Crossfiltering() {
     const [min, setMin] = useState(-1.0);
     const [max, setMax] = useState(1.0);
     const [range, setRange] = useState([]);
-    const COLOR = { X: "#ff7577", Y: "#55ff7f", Z: "#55ffff" };
     const [color, setColor] = useState(COLOR);
 
     // import csv as csvData
@@ -40,6 +40,7 @@ export default function Crossfiltering() {
             setMin(Math.floor(d3.min([d3.min(d, (val) => { return val.X }), d3.min(d, (val) => { return val.Y }), d3.min(d, (val) => { return val.Z })]) * 10) / 10);
             setMax(Math.ceil(d3.max([d3.max(d, (val) => { return val.X }), d3.max(d, (val) => { return val.Y }), d3.max(d, (val) => { return val.Z })]) * 10) / 10);
             setRange([d[0].timestamp, d[d.length - 1].timestamp]);
+            setColor(COLOR);
         });
     }, []);
 
@@ -83,20 +84,7 @@ export default function Crossfiltering() {
                     .attr("height", d => BAR_HEIGHT - MARGIN.bottom - y(d))
                     .attr("width", x.bandwidth())
                     .attr("fill", (_, i) => color[header[i]])
-                    .attr("id", (_, i) => header[i])
-                    .on("mouseover", function () {
-                        console.log(color);
-                        for (let i = 0; i < Object.keys(color).length; i++) {
-                            if (Object.keys(color)[i] !== this.id) {
-                                color[Object.keys(color)[i]] = "#000000";
-                            }
-                        }
-                        setColor(color);
-                        console.log(color);
-                    })
-                    .on("mouseout", function () {
-                        setColor(COLOR);
-                    });
+                    .attr("id", (_, i) => header[i]);
             } else {
                 let newAverage;
                 if (currSelection === "X") newAverage = average[0];
@@ -175,19 +163,7 @@ export default function Crossfiltering() {
                     .attr("stroke", color[header[i]])
                     .attr("stroke-width", 1.5)
                     .attr("d", valueLine[i])
-                    .attr("id", header[i])
-                    .on("mouseover", function () {
-                        for (let i = 0; i < Object.keys(color).length; i++) {
-                            if (Object.keys(color)[i] !== this.id)
-                                color[Object.keys(color)[i]] = "#000000";
-                        }
-                        console.log(color);
-                        setColor(color);
-                    })
-                    .on("mouseout", function () {
-                        console.log(COLOR);
-                        setColor(COLOR);
-                    });
+                    .attr("id", header[i]);
             }
 
             function xAxis(g) {
@@ -209,6 +185,46 @@ export default function Crossfiltering() {
             }
         }
     }, [showData, header, max, min, range, color]);
+
+    // set event listener on pointer event and update state "color"
+    useEffect(() => {
+        if (d3BarContainer.current && d3LineContainer.current && showData) {
+            const barSvg = d3.select(d3BarContainer.current);
+            barSvg.selectAll("rect")
+                .on("pointerenter", function () {
+                    setColor(prev => {
+                        const newColor = { ...prev };
+                        Object.keys(prev).forEach(key => {
+                            if (key !== this.id) {
+                                newColor[key] = "#e2ebff";
+                            }
+                        })
+                        if (JSON.stringify(newColor) === JSON.stringify(prev)) return prev;
+                        return newColor;
+                    });
+                })
+                .on("pointerleave", function () {
+                    setColor(COLOR);
+                });
+            const lineSvg = d3.select(d3LineContainer.current);
+            lineSvg.selectAll("path")
+                .on("pointerenter", function () {
+                    setColor(prev => {
+                        const newColor = { ...prev };
+                        Object.keys(prev).forEach(key => {
+                            if (key !== this.id) {
+                                newColor[key] = "#e2ebff";
+                            }
+                        })
+                        if (JSON.stringify(newColor) === JSON.stringify(prev)) return prev;
+                        return newColor;
+                    });
+                })
+                .on("pointerleave", function () {
+                    setColor(COLOR);
+                });
+        }
+    })
 
     const timestampConverter = (timestamp) => {
         var date = new Date(timestamp);
@@ -283,27 +299,6 @@ export default function Crossfiltering() {
             <Button style={{ marginBottom: "3%" }} onClick={print}>
                 For Test
             </Button>
-            {/* {data.length > 0 &&
-                <Table bordered striped hover className="table-light">
-                    <thead>
-                        <tr key={"header"}>
-                            {data.columns.map((key) => {
-                                return <th key={key}>{key}</th>
-                            })}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {data.map((d, i) => (
-                            <tr key={i}>
-                                {data.columns.map((h) => {
-                                    if (h === "timestamp") return <th key={d["timeString"]}>{d["timeString"]}</th>
-                                    return <th key={d[h]}>{d[h]}</th>
-                                })}
-                            </tr>
-                        ))}
-                    </tbody>
-                </Table>
-            } */}
         </div >
     )
 }
