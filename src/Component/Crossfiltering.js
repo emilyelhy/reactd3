@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as d3 from 'd3'
-import { Table, Button, Dropdown, DropdownButton } from 'react-bootstrap';
+import { Button, Dropdown, DropdownButton } from 'react-bootstrap';
 import { Slider } from '@mui/material';
 import 'bootstrap/dist/css/bootstrap.css';
 
@@ -63,7 +63,6 @@ export default function Crossfiltering() {
             average.push(totalX / (showData.length));
             average.push(totalY / (showData.length));
             average.push(totalZ / (showData.length));
-            console.log(average)
 
             const x = d3.scaleBand()
                 .domain(d3.range(header.length))
@@ -96,20 +95,8 @@ export default function Crossfiltering() {
                     .attr("y", (d) => y(d) - MARGIN.bottom)
                     .attr("height", d => BAR_HEIGHT - y(d))
                     .attr("width", x.bandwidth())
-                    .attr("fill", (_, i) => COLOR[currSelection])
+                    .attr("fill", (_, i) => color[currSelection])
                     .attr("id", (_, i) => header[i])
-                    .on("mouseover", function () {
-                        return d3.select(this)
-                            .transition()
-                            .duration("50")
-                            .attr("opacity", "0.6");
-                    })
-                    .on("mouseout", function () {
-                        return d3.select(this)
-                            .transition()
-                            .duration("50")
-                            .attr("opacity", "1");
-                    });
             }
 
             function xAxis(g) {
@@ -191,11 +178,11 @@ export default function Crossfiltering() {
         if (d3BarContainer.current && d3LineContainer.current && showData) {
             const barSvg = d3.select(d3BarContainer.current);
             barSvg.selectAll("rect")
-                .on("pointerenter", function () {
+                .on("pointerenter", (e) => {
                     setColor(prev => {
                         const newColor = { ...prev };
                         Object.keys(prev).forEach(key => {
-                            if (key !== this.id) {
+                            if (key !== e.target.id) {
                                 newColor[key] = "#e2ebff";
                             }
                         })
@@ -203,16 +190,16 @@ export default function Crossfiltering() {
                         return newColor;
                     });
                 })
-                .on("pointerleave", function () {
+                .on("pointerleave", () => {
                     setColor(COLOR);
                 });
             const lineSvg = d3.select(d3LineContainer.current);
             lineSvg.selectAll("path")
-                .on("pointerenter", function () {
+                .on("pointerenter", (e) => {
                     setColor(prev => {
                         const newColor = { ...prev };
                         Object.keys(prev).forEach(key => {
-                            if (key !== this.id) {
+                            if (key !== e.target.id) {
                                 newColor[key] = "#e2ebff";
                             }
                         })
@@ -220,7 +207,7 @@ export default function Crossfiltering() {
                         return newColor;
                     });
                 })
-                .on("pointerleave", function () {
+                .on("pointerleave", () => {
                     setColor(COLOR);
                 });
         }
