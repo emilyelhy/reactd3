@@ -15,7 +15,8 @@ const COLOR = { X: "#ff7577", Y: "#55ff7f", Z: "#55ffff" };
 export default function Crossfiltering() {
     const [data, setData] = useState([]);
     const [currSelection, setCurrSelection] = useState("All");
-    const [showData, setShowData] = useState([]);
+    const [barData, setBarData] = useState([]);
+    const [lineData, setLineData] = useState([]);
     const d3BarContainer = useRef(null);
     const d3LineContainer = useRef(null);
     const HEADER = ["X", "Y", "Z"];
@@ -24,6 +25,7 @@ export default function Crossfiltering() {
     const [max, setMax] = useState(1.0);
     const [range, setRange] = useState([]);
     const [color, setColor] = useState(COLOR);
+    const [focus, setFocus] = useState(false);
 
     // import csv as csvData
     useEffect(() => {
@@ -36,7 +38,8 @@ export default function Crossfiltering() {
             return csvRow;
         }).then((d) => {
             setData(d);
-            setShowData(d);
+            setBarData(d);
+            setLineData(d);
             setMin(Math.floor(d3.min([d3.min(d, (val) => { return val.X }), d3.min(d, (val) => { return val.Y }), d3.min(d, (val) => { return val.Z })]) * 10) / 10);
             setMax(Math.ceil(d3.max([d3.max(d, (val) => { return val.X }), d3.max(d, (val) => { return val.Y }), d3.max(d, (val) => { return val.Z })]) * 10) / 10);
             setRange([d[0].timestamp, d[d.length - 1].timestamp]);
@@ -46,7 +49,7 @@ export default function Crossfiltering() {
 
     // construct bar chart
     useEffect(() => {
-        if (d3BarContainer.current && showData) {
+        if (d3BarContainer.current && barData) {
             const svg = d3.select(d3BarContainer.current)
                 .attr("height", BAR_HEIGHT - MARGIN.top - MARGIN.bottom)
                 .attr("width", BAR_WIDTH - MARGIN.left - MARGIN.right)
@@ -54,15 +57,15 @@ export default function Crossfiltering() {
 
             // calculating average of X, Y, Z
             var totalX = 0, totalY = 0, totalZ = 0;
-            for (let i = 0; i < showData.length; i++) {
-                totalX = totalX + showData[i].X;
-                totalY = totalY + showData[i].Y;
-                totalZ = totalZ + showData[i].Z;
+            for (let i = 0; i < barData.length; i++) {
+                totalX = totalX + barData[i].X;
+                totalY = totalY + barData[i].Y;
+                totalZ = totalZ + barData[i].Z;
             }
             const average = [];
-            average.push(totalX / (showData.length));
-            average.push(totalY / (showData.length));
-            average.push(totalZ / (showData.length));
+            average.push(totalX / (barData.length));
+            average.push(totalY / (barData.length));
+            average.push(totalZ / (barData.length));
 
             const x = d3.scaleBand()
                 .domain(d3.range(header.length))
@@ -117,18 +120,18 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [showData, currSelection, header, max, min, color]);
+    }, [barData, currSelection, header, max, min, color]);
 
     // construct line chart
     useEffect(() => {
-        if (d3LineContainer.current && showData) {
+        if (d3LineContainer.current && lineData) {
             const svg = d3.select(d3LineContainer.current)
                 .attr("height", LINE_HEIGHT - MARGIN.top - MARGIN.bottom)
                 .attr("width", LINE_WIDTH - MARGIN.left - MARGIN.right)
                 .attr("viewBox", [0 - MARGIN.left, 0, LINE_WIDTH, LINE_HEIGHT]);
 
             const x = d3.scaleTime()
-                .domain(d3.extent(showData, (d) => { return d.timestamp }))
+                .domain(d3.extent(lineData, (d) => { return d.timestamp }))
                 .range([MARGIN.left, LINE_WIDTH - MARGIN.right]);
 
             const y = d3.scaleLinear()
@@ -144,7 +147,7 @@ export default function Crossfiltering() {
 
             for (let i = 0; i < valueLine.length; i++) {
                 svg.append("path")
-                    .data([showData])
+                    .data([lineData])
                     .attr("class", "line")
                     .attr("fill", "none")
                     .attr("stroke", color[header[i]])
@@ -171,11 +174,11 @@ export default function Crossfiltering() {
                 svg.selectAll("*").remove()
             }
         }
-    }, [showData, header, max, min, range, color]);
+    }, [lineData, header, max, min, range, color]);
 
     // set event listener on pointer event and update state "color"
     useEffect(() => {
-        if (d3BarContainer.current && d3LineContainer.current && showData) {
+        if (d3BarContainer.current && d3LineContainer.current) {
             const barSvg = d3.select(d3BarContainer.current);
             barSvg.selectAll("rect")
                 .on("pointerenter", (e) => {
@@ -192,6 +195,18 @@ export default function Crossfiltering() {
                 })
                 .on("pointerleave", () => {
                     setColor(COLOR);
+                    setLineData(snipData(range));
+                    setFocus(false);
+                })
+                .on("pointerdown", (e) => {
+                    if (focus === false) {
+                        var temp = getSelectedData(snipData(range), e.target.id);
+                        setLineData(temp);
+                        setFocus(!focus);
+                    } else {
+                        setLineData(snipData(range));
+                        setFocus(!focus);
+                    }
                 });
             const lineSvg = d3.select(d3LineContainer.current);
             lineSvg.selectAll("path")
@@ -211,7 +226,7 @@ export default function Crossfiltering() {
                     setColor(COLOR);
                 });
         }
-    })
+    });
 
     const timestampConverter = (timestamp) => {
         var date = new Date(timestamp);
@@ -225,16 +240,15 @@ export default function Crossfiltering() {
     const handleCurrSelection = (sel) => {
         setCurrSelection(sel);
         if (sel === "All") {
-            setShowData(snipData(range));
+            setBarData(snipData(range));
+            setLineData(snipData(range));
             setHeader(HEADER);
         }
         else {
-            var snipped = snipData(range);
-            var temp = [];
-            for (let i = 0; i < snipped.length; i++)
-                temp.push({ [sel]: snipped[i][sel], timestamp: snipped[i]["timestamp"], timeString: snipped[i]["timeString"] });
+            var temp = getSelectedData(snipData(range), sel);
             setHeader(sel);
-            setShowData(temp);
+            setBarData(temp);
+            setLineData(temp);
         }
     };
 
@@ -247,8 +261,16 @@ export default function Crossfiltering() {
         return tempDataArray;
     };
 
+    const getSelectedData = (data, sel) => {
+        var temp = [];
+        for (let i = 0; i < data.length; i++)
+            temp.push({ [sel]: data[i][sel], timestamp: data[i]["timestamp"], timeString: data[i]["timeString"] });
+        return temp;
+    }
+
     const handleSliderRange = (_, newValue) => {
-        setShowData(snipData(newValue));
+        setBarData(snipData(newValue));
+        setLineData(snipData(newValue));
     };
 
     return (
