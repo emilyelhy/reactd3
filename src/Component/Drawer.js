@@ -79,6 +79,11 @@ export default function NavDrawer({ content }) {
                                 <ListItemText primary="Crossfiltering" />
                             </ListItemButton>
                         </ListItem>
+                        <ListItem component={Link} to="/dynamicbox" key="dynamicbox" disablePadding>
+                            <ListItemButton onClick={handleDrawerClose}>
+                                <ListItemText primary="Dynamic Box" />
+                            </ListItemButton>
+                        </ListItem>
                     </List>
                 </Drawer>
             </Box>

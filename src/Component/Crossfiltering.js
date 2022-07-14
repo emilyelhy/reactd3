@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import * as d3 from 'd3'
+import * as d3 from 'd3';
 import { Button, Dropdown, DropdownButton } from 'react-bootstrap';
 import { Slider } from '@mui/material';
 import 'bootstrap/dist/css/bootstrap.css';
@@ -95,8 +95,8 @@ export default function Crossfiltering() {
                 svg.append("rect")
                     .data([newAverage])
                     .attr("x", (_, i) => x(i))
-                    .attr("y", (d) => y(d) - MARGIN.bottom)
-                    .attr("height", d => BAR_HEIGHT - y(d))
+                    .attr("y", (d) => y(d))
+                    .attr("height", d => BAR_HEIGHT - MARGIN.bottom - y(d))
                     .attr("width", x.bandwidth())
                     .attr("fill", (_, i) => color[currSelection])
                     .attr("id", (_, i) => header[i])
