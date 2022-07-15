@@ -16,8 +16,18 @@ export default function DynamicBox() {
     const inputRef1 = useRef(null);
     const inputRef2 = useRef(null);
     const [data, setData] = useState(DATA);
+    const [showGraph, setShowGraph] = useState([]);
     const inputRefs = [inputRef0, inputRef1, inputRef2];
 
+    // Init all useState with usable data
+    useEffect(() => {
+        setData(DATA);
+        const temp = [];
+        DATA.forEach(() => temp.push(-1));
+        setShowGraph(temp);
+    }, []);
+
+    // Rendering 1st Graph
     useEffect(() => {
         if (inputRef0.current && data) {
             const svg = d3.select(inputRef0.current)
@@ -42,7 +52,8 @@ export default function DynamicBox() {
                 .attr("y", (d) => y(d))
                 .attr("height", d => HEIGHT - MARGIN.bottom - y(d))
                 .attr("width", x.bandwidth())
-                .attr("fill", (_, i) => COLOR[i % 3]);
+                .attr("fill", (_, i) => COLOR[i % 3])
+                .attr("id", d => d);
 
             function xAxis(g) {
                 g.attr("transform", `translate(0, ${HEIGHT - MARGIN.bottom})`)
@@ -63,6 +74,7 @@ export default function DynamicBox() {
         }
     }, [data]);
 
+    // Rendering 2nd Graph
     useEffect(() => {
         if (inputRef1.current && data) {
             const svg = d3.select(inputRef1.current)
@@ -87,7 +99,8 @@ export default function DynamicBox() {
                 .attr("y", (d) => y(d))
                 .attr("height", d => HEIGHT - MARGIN.bottom - y(d))
                 .attr("width", x.bandwidth())
-                .attr("fill", (_, i) => COLOR[i % 3]);
+                .attr("fill", (_, i) => COLOR[i % 3])
+                .attr("id", d => d);
 
             function xAxis(g) {
                 g.attr("transform", `translate(0, ${HEIGHT - MARGIN.bottom})`)
@@ -108,6 +121,7 @@ export default function DynamicBox() {
         }
     }, [data]);
 
+    // Rendering 3rd Graph
     useEffect(() => {
         if (inputRef2.current && data) {
             const svg = d3.select(inputRef2.current)
@@ -132,7 +146,8 @@ export default function DynamicBox() {
                 .attr("y", (d) => y(d))
                 .attr("height", d => HEIGHT - MARGIN.bottom - y(d))
                 .attr("width", x.bandwidth())
-                .attr("fill", (_, i) => COLOR[i % 3]);
+                .attr("fill", (_, i) => COLOR[i % 3])
+                .attr("id", d => d);
 
             function xAxis(g) {
                 g.attr("transform", `translate(0, ${HEIGHT - MARGIN.bottom})`)
@@ -153,22 +168,63 @@ export default function DynamicBox() {
         }
     }, [data]);
 
+    // Control event listener for 3 svgs
+    useEffect(() => {
+        if (inputRef0.current && inputRef1.current && inputRef2.current) {
+            const svg0 = d3.select(inputRef0.current);
+            svg0.selectAll("rect")
+                .on("pointerup", (e) => {
+                    console.log("Pointer up in svg 0 with " + e.target.id + " activated");
+                    setShowGraph(prev => {
+                        const current = { ...prev };
+                        current[0] = e.target.id;
+                        return current;
+                    })
+                });
+            const svg1 = d3.select(inputRef1.current);
+            svg1.selectAll("rect")
+                .on("pointerup", (e) => {
+                    console.log("Pointer up in svg 1 with " + e.target.id + " activated");
+                    setShowGraph(prev => {
+                        const current = { ...prev };
+                        current[1] = e.target.id;
+                        return current;
+                    })
+                });
+            const svg2 = d3.select(inputRef2.current);
+            svg2.selectAll("rect")
+                .on("pointerup", (e) => {
+                    console.log("Pointer up in svg 2 with " + e.target.id + " activated");
+                    setShowGraph(prev => {
+                        const current = { ...prev };
+                        current[2] = e.target.id;
+                        return current;
+                    })
+                });
+        }
+    });
+
+    const closeBox = () => {
+        const temp = [];
+        DATA.forEach(() => temp.push(-1));
+        setShowGraph(temp);
+    }
+
     return (
         <div style={{ display: "flex", flexDirection: "column", marginTop: "10%", marginLeft: "3%", marginRight: "3%" }}>
             <h3>DynamicBox.js</h3>
             {DATA.map((_, i) => {
                 return (
                     <div key={i} style={{ marginBottom: "5%" }}>
+                        {showGraph && showGraph[i] >= 0 && <div onClick={closeBox}>
+                            <h2>Chosen value: {showGraph[i]}</h2>
+                        </div>}
                         <svg height={HEIGHT} width={WIDTH} ref={inputRefs[i]}>
                         </svg>
 
                     </div>
                 )
             })}
-            {/* <div>
-                <svg height={HEIGHT} width={WIDTH} ref={inputRef0}>
-                </svg>
-            </div> */}
         </div>
     )
 }
