@@ -175,31 +175,19 @@ export default function DynamicBox() {
             svg0.selectAll("rect")
                 .on("pointerup", (e) => {
                     console.log("Pointer up in svg 0 with " + e.target.id + " activated");
-                    setShowGraph(prev => {
-                        const current = { ...prev };
-                        current[0] = e.target.id;
-                        return current;
-                    })
+                    setShowGraph(prev => handleBoxOpen(prev, 0, e.target.id))
                 });
             const svg1 = d3.select(inputRef1.current);
             svg1.selectAll("rect")
                 .on("pointerup", (e) => {
                     console.log("Pointer up in svg 1 with " + e.target.id + " activated");
-                    setShowGraph(prev => {
-                        const current = { ...prev };
-                        current[1] = e.target.id;
-                        return current;
-                    })
+                    setShowGraph(prev => handleBoxOpen(prev, 1, e.target.id))
                 });
             const svg2 = d3.select(inputRef2.current);
             svg2.selectAll("rect")
                 .on("pointerup", (e) => {
                     console.log("Pointer up in svg 2 with " + e.target.id + " activated");
-                    setShowGraph(prev => {
-                        const current = { ...prev };
-                        current[2] = e.target.id;
-                        return current;
-                    })
+                    setShowGraph(prev => handleBoxOpen(prev, 2, e.target.id))
                 });
         }
     });
@@ -208,6 +196,15 @@ export default function DynamicBox() {
         const temp = [];
         DATA.forEach(() => temp.push(-1));
         setShowGraph(temp);
+    }
+
+    const handleBoxOpen = (prev, id, value) => {
+        const current = [...prev];
+        for(let i = 0; i < current.length; i++){
+            if(i === id) current[i] = value;
+            else current[i] = -1;
+        }
+        return current;
     }
 
     return (
