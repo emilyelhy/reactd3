@@ -18,13 +18,25 @@ export default function DynamicBox() {
     const [data, setData] = useState(DATA);
     const [showGraph, setShowGraph] = useState([]);
     const inputRefs = [inputRef0, inputRef1, inputRef2];
+    const handleBoxOpen = (prev, id, value) => {
+        const current = [...prev];
+        for (let i = 0; i < current.length; i++) {
+            if (i === id) current[i] = value;
+            else current[i] = {};
+        }
+        return current;
+    }
+
+    const resetShowGraph = () => {
+        const temp = [];
+        DATA.forEach(() => temp.push({}));
+        setShowGraph(temp);
+    }
 
     // Init all useState with usable data
     useEffect(() => {
         setData(DATA);
-        const temp = [];
-        DATA.forEach(() => temp.push(-1));
-        setShowGraph(temp);
+        resetShowGraph();
     }, []);
 
     // Rendering 1st Graph
@@ -67,6 +79,29 @@ export default function DynamicBox() {
                     .attr("font-size", "20px");
             }
             svg.append("g").call(yAxis);
+
+            const brush = d3.brushX()
+                .extent([
+                    [d3.min(x.range()), d3.min(y.range())],
+                    [d3.max(x.range()), d3.max(y.range())]
+                ])
+                .on("brush end", (e) => {
+                    if(e.selection != null){
+                        console.log(e.selection);
+                        const [x0, x1] = e.selection;
+                        const selected = data[0].filter((d, i) => {
+                            if(x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                        })
+                        const average = selected.reduce((a, b) => a + b, 0) / selected.length;
+                        const value = {selected: selected, average: average};
+                        setShowGraph(prev => handleBoxOpen(prev, 0, value));
+                    } else resetShowGraph();
+                });
+                svg.selectAll(".brushContainer")
+                    .data([1])
+                    .join("g")
+                    .attr("class", "brushContainer")
+                    .call(brush);
 
             return () => {
                 svg.selectAll("*").remove()
@@ -115,6 +150,29 @@ export default function DynamicBox() {
             }
             svg.append("g").call(yAxis);
 
+            const brush = d3.brushX()
+                .extent([
+                    [d3.min(x.range()), d3.min(y.range())],
+                    [d3.max(x.range()), d3.max(y.range())]
+                ])
+                .on("brush end", (e) => {
+                    if(e.selection != null){
+                        console.log(e.selection);
+                        const [x0, x1] = e.selection;
+                        const selected = data[1].filter((d, i) => {
+                            if(x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                        })
+                        const average = selected.reduce((a, b) => a + b, 0) / selected.length;
+                        const value = {selected: selected, average: average};
+                        setShowGraph(prev => handleBoxOpen(prev, 1, value));
+                    } else resetShowGraph();
+                });
+            svg.selectAll(".brushContainer")
+                .data([1])
+                .join("g")
+                .attr("class", "brushContainer")
+                .call(brush);
+
             return () => {
                 svg.selectAll("*").remove()
             }
@@ -162,50 +220,34 @@ export default function DynamicBox() {
             }
             svg.append("g").call(yAxis);
 
+            const brush = d3.brushX()
+                .extent([
+                    [d3.min(x.range()), d3.min(y.range())],
+                    [d3.max(x.range()), d3.max(y.range())]
+                ])
+                .on("brush end", (e) => {
+                    if(e.selection != null){
+                        console.log(e.selection);
+                        const [x0, x1] = e.selection;
+                        const selected = data[2].filter((d, i) => {
+                            if(x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                        })
+                        const average = selected.reduce((a, b) => a + b, 0) / selected.length;
+                        const value = {selected: selected, average: average};
+                        setShowGraph(prev => handleBoxOpen(prev, 2, value));
+                    } else resetShowGraph();
+                });
+            svg.selectAll(".brushContainer")
+                .data([1])
+                .join("g")
+                .attr("class", "brushContainer")
+                .call(brush);
+
             return () => {
                 svg.selectAll("*").remove()
             }
         }
     }, [data]);
-
-    // Control event listener for 3 svgs
-    useEffect(() => {
-        if (inputRef0.current && inputRef1.current && inputRef2.current) {
-            const svg0 = d3.select(inputRef0.current);
-            svg0.selectAll("rect")
-                .on("pointerup", (e) => {
-                    console.log("Pointer up in svg 0 with " + e.target.id + " activated");
-                    setShowGraph(prev => handleBoxOpen(prev, 0, e.target.id))
-                });
-            const svg1 = d3.select(inputRef1.current);
-            svg1.selectAll("rect")
-                .on("pointerup", (e) => {
-                    console.log("Pointer up in svg 1 with " + e.target.id + " activated");
-                    setShowGraph(prev => handleBoxOpen(prev, 1, e.target.id))
-                });
-            const svg2 = d3.select(inputRef2.current);
-            svg2.selectAll("rect")
-                .on("pointerup", (e) => {
-                    console.log("Pointer up in svg 2 with " + e.target.id + " activated");
-                    setShowGraph(prev => handleBoxOpen(prev, 2, e.target.id))
-                });
-        }
-    });
-
-    const closeBox = () => {
-        const temp = [];
-        DATA.forEach(() => temp.push(-1));
-        setShowGraph(temp);
-    }
-
-    const handleBoxOpen = (prev, id, value) => {
-        const current = [...prev];
-        for(let i = 0; i < current.length; i++){
-            if(i === id) current[i] = value;
-            else current[i] = -1;
-        }
-        return current;
-    }
 
     return (
         <div style={{ display: "flex", flexDirection: "column", marginTop: "10%", marginLeft: "3%", marginRight: "3%" }}>
@@ -213,8 +255,8 @@ export default function DynamicBox() {
             {DATA.map((_, i) => {
                 return (
                     <div key={i} style={{ marginBottom: "5%" }}>
-                        {showGraph && showGraph[i] >= 0 && <div onClick={closeBox}>
-                            <h2>Chosen value: {showGraph[i]}</h2>
+                        {showGraph && showGraph[i] != null && Object.keys(showGraph[i]).length > 0 && <div onClick={resetShowGraph}>
+                            <h2>Chosen value: {showGraph[i].selected.toString()} Average: {showGraph[i].average}</h2>
                         </div>}
                         <svg height={HEIGHT} width={WIDTH} ref={inputRefs[i]}>
                         </svg>
