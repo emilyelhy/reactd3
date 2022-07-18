@@ -18,6 +18,8 @@ export default function DynamicBox() {
     const [data, setData] = useState(DATA);
     const [showGraph, setShowGraph] = useState([]);
     const inputRefs = [inputRef0, inputRef1, inputRef2];
+    const [clear, setClear] = useState(false);
+
     const handleBoxOpen = (prev, id, value) => {
         const current = [...prev];
         for (let i = 0; i < current.length; i++) {
@@ -25,6 +27,11 @@ export default function DynamicBox() {
             else current[i] = {};
         }
         return current;
+    }
+
+    const closeBox = () => {
+        resetShowGraph();
+        setClear(true);
     }
 
     const resetShowGraph = () => {
@@ -97,17 +104,23 @@ export default function DynamicBox() {
                         setShowGraph(prev => handleBoxOpen(prev, 0, value));
                     } else resetShowGraph();
                 });
-                svg.selectAll(".brushContainer")
+                const sel = svg.selectAll(".brushContainer")
                     .data([1])
                     .join("g")
                     .attr("class", "brushContainer")
                     .call(brush);
 
+                if(clear){
+                    console.log("now clear")
+                    sel.call(brush.move, null);
+                    setClear(false);
+                }
+
             return () => {
                 svg.selectAll("*").remove()
             }
         }
-    }, [data]);
+    }, [data, clear]);
 
     // Rendering 2nd Graph
     useEffect(() => {
@@ -255,7 +268,7 @@ export default function DynamicBox() {
             {DATA.map((_, i) => {
                 return (
                     <div key={i} style={{ marginBottom: "5%" }}>
-                        {showGraph && showGraph[i] != null && Object.keys(showGraph[i]).length > 0 && <div onClick={resetShowGraph}>
+                        {showGraph && showGraph[i] != null && Object.keys(showGraph[i]).length > 0 && <div onClick={closeBox}>
                             <h2>Chosen value: {showGraph[i].selected.toString()} Average: {showGraph[i].average}</h2>
                         </div>}
                         <svg height={HEIGHT} width={WIDTH} ref={inputRefs[i]}>
