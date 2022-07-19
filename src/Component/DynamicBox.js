@@ -18,8 +18,9 @@ export default function DynamicBox() {
     const [data, setData] = useState(DATA);
     const [showGraph, setShowGraph] = useState([]);
     const inputRefs = [inputRef0, inputRef1, inputRef2];
-    const [clear, setClear] = useState(false);
+    const [clear, setClear] = useState([]);
 
+    // update showGraph by setting showGraph[id] as value
     const handleBoxOpen = (prev, id, value) => {
         const current = [...prev];
         for (let i = 0; i < current.length; i++) {
@@ -29,21 +30,38 @@ export default function DynamicBox() {
         return current;
     }
 
-    const closeBox = () => {
-        resetShowGraph();
-        setClear(true);
+    // update clear by setting clear[id] as false to indicate other graphs need to be cleared
+    const handleClear = (id) => {
+        setClear(prev => {
+            const current = [...prev];
+            for (let i = 0; i < current.length; i++) {
+                if (i === id) current[i] = false;
+                else current[i] = true;
+            }
+            if (JSON.stringify(current) === JSON.stringify(prev)) return prev;
+            return current;
+        });
     }
 
+    // reset clear as false, which means all graph do not need to be cleared
+    const resetClear = () => {
+        const tempClear = []
+        DATA.forEach(() => tempClear.push(false));
+        setClear(tempClear);
+    }
+
+    // reset showGraph as all null obj, which means no dynamic box is appeared
     const resetShowGraph = () => {
-        const temp = [];
-        DATA.forEach(() => temp.push({}));
-        setShowGraph(temp);
+        const tempShowGraph = [];
+        DATA.forEach(() => tempShowGraph.push({}));
+        setShowGraph(tempShowGraph);
     }
 
     // Init all useState with usable data
     useEffect(() => {
         setData(DATA);
         resetShowGraph();
+        resetClear();
     }, []);
 
     // Rendering 1st Graph
@@ -93,34 +111,37 @@ export default function DynamicBox() {
                     [d3.max(x.range()), d3.max(y.range())]
                 ])
                 .on("brush end", (e) => {
-                    if(e.selection != null){
-                        console.log(e.selection);
+                    if (e.selection != null) {
                         const [x0, x1] = e.selection;
                         const selected = data[0].filter((d, i) => {
-                            if(x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                            if (x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                            return false;
                         })
-                        const average = selected.reduce((a, b) => a + b, 0) / selected.length;
-                        const value = {selected: selected, average: average};
+                        const average = selected.length > 0 ? selected.reduce((a, b) => a + b, 0) / selected.length : 0;
+                        const value = { selected: selected, average: average.toFixed(2) };
                         setShowGraph(prev => handleBoxOpen(prev, 0, value));
-                    } else resetShowGraph();
-                });
-                const sel = svg.selectAll(".brushContainer")
-                    .data([1])
-                    .join("g")
-                    .attr("class", "brushContainer")
-                    .call(brush);
+                    } else {
+                        resetShowGraph();
+                        resetClear();
+                    }
+                })
+                .on("start", () => handleClear(0));
+            const sel = svg.selectAll(".brushContainer")
+                .data([1])
+                .join("g")
+                .attr("class", "brushContainer")
+                .call(brush);
 
-                if(clear){
-                    console.log("now clear")
-                    sel.call(brush.move, null);
-                    setClear(false);
-                }
+            if (clear[0]) {
+                sel.call(brush.move, null);
+                resetClear();
+            }
 
             return () => {
                 svg.selectAll("*").remove()
             }
         }
-    }, [data, clear]);
+    }, [data, clear[0]]);
 
     // Rendering 2nd Graph
     useEffect(() => {
@@ -169,28 +190,37 @@ export default function DynamicBox() {
                     [d3.max(x.range()), d3.max(y.range())]
                 ])
                 .on("brush end", (e) => {
-                    if(e.selection != null){
-                        console.log(e.selection);
+                    if (e.selection != null) {
                         const [x0, x1] = e.selection;
                         const selected = data[1].filter((d, i) => {
-                            if(x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                            if (x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                            return false;
                         })
-                        const average = selected.reduce((a, b) => a + b, 0) / selected.length;
-                        const value = {selected: selected, average: average};
+                        const average = selected.length > 0 ? selected.reduce((a, b) => a + b, 0) / selected.length : 0;
+                        const value = { selected: selected, average: average.toFixed(2) };
                         setShowGraph(prev => handleBoxOpen(prev, 1, value));
-                    } else resetShowGraph();
-                });
-            svg.selectAll(".brushContainer")
+                    } else {
+                        resetShowGraph();
+                        resetClear();
+                    }
+                })
+                .on("start", () => handleClear(1));
+            const sel = svg.selectAll(".brushContainer")
                 .data([1])
                 .join("g")
                 .attr("class", "brushContainer")
                 .call(brush);
 
+            if (clear[1]) {
+                sel.call(brush.move, null);
+                resetClear();
+            }
+
             return () => {
                 svg.selectAll("*").remove()
             }
         }
-    }, [data]);
+    }, [data, clear[1]]);
 
     // Rendering 3rd Graph
     useEffect(() => {
@@ -239,28 +269,37 @@ export default function DynamicBox() {
                     [d3.max(x.range()), d3.max(y.range())]
                 ])
                 .on("brush end", (e) => {
-                    if(e.selection != null){
-                        console.log(e.selection);
+                    if (e.selection != null) {
                         const [x0, x1] = e.selection;
                         const selected = data[2].filter((d, i) => {
-                            if(x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                            if (x0 <= (x(i) + 40) && x1 >= (x(i) + 40)) return d;
+                            return false;
                         })
-                        const average = selected.reduce((a, b) => a + b, 0) / selected.length;
-                        const value = {selected: selected, average: average};
+                        const average = selected.length > 0 ? selected.reduce((a, b) => a + b, 0) / selected.length : 0;
+                        const value = { selected: selected, average: average.toFixed(2) };
                         setShowGraph(prev => handleBoxOpen(prev, 2, value));
-                    } else resetShowGraph();
-                });
-            svg.selectAll(".brushContainer")
+                    } else {
+                        resetShowGraph();
+                        resetClear();
+                    }
+                })
+                .on("start", () => handleClear(2));
+            const sel = svg.selectAll(".brushContainer")
                 .data([1])
                 .join("g")
                 .attr("class", "brushContainer")
                 .call(brush);
 
+            if (clear[2]) {
+                sel.call(brush.move, null);
+                resetClear();
+            }
+
             return () => {
                 svg.selectAll("*").remove()
             }
         }
-    }, [data]);
+    }, [data, clear[2]]);
 
     return (
         <div style={{ display: "flex", flexDirection: "column", marginTop: "10%", marginLeft: "3%", marginRight: "3%" }}>
@@ -268,8 +307,8 @@ export default function DynamicBox() {
             {DATA.map((_, i) => {
                 return (
                     <div key={i} style={{ marginBottom: "5%" }}>
-                        {showGraph && showGraph[i] != null && Object.keys(showGraph[i]).length > 0 && <div onClick={closeBox}>
-                            <h2>Chosen value: {showGraph[i].selected.toString()} Average: {showGraph[i].average}</h2>
+                        {showGraph && showGraph[i] != null && Object.keys(showGraph[i]).length > 0 && <div>
+                            <h2>Chosen value: { showGraph[i].selected.length > 0 ? showGraph[i].selected.toString() : "None"} Average: {showGraph[i].average}</h2>
                         </div>}
                         <svg height={HEIGHT} width={WIDTH} ref={inputRefs[i]}>
                         </svg>
